@@ -6,15 +6,44 @@ import { Box, Button, Container, IconButton, TextField, Typography } from '@mui/
 import { useEffect, useState } from 'react';
 import useFetch from '../hooks/useFetch.ts';
 import { Task } from '../index';
+import { MenuItem, Select } from '@mui/material';
+import { FormControl, FormControlLabel, Radio, RadioGroup } from '@mui/material';
 
-type EditableTask = Task & { isEditing?: boolean; originalName?: string };
+type EditableTask = Task & {
+  isEditing?: boolean;
+  originalName?: string;
+  originalPriority?: string;
+};
+
 
 const TodoPage = () => {
   const api = useFetch();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTaskName, setNewTaskName] = useState('');
+  const [newTaskPriority, setNewTaskPriority] = useState('MEDIUM');
+  const [sortDescending, setSortDescending] = useState(true);
 
-  const handleFetchTasks = async () => setTasks(await api.get('/tasks'));
+  const handleFetchTasks = async () => {
+    const fetched: Task[] = await api.get('/tasks');
+    const priorityOrder: Record<Task['priority'], number> = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+
+    const sorted = [...fetched].sort((a, b) =>
+      sortDescending
+        ? priorityOrder[b.priority] - priorityOrder[a.priority]
+        : priorityOrder[a.priority] - priorityOrder[b.priority]
+    );
+
+    setTasks(
+      sorted.map((task: Task) => ({
+        ...task,
+        originalName: task.name,
+        originalPriority: task.priority,
+      }))
+    );
+  };
+
+
+
 
   const handleDelete = async (id: number) => {
     // @todo IMPLEMENT HERE : DELETE THE TASK & REFRESH ALL THE TASKS, DON'T FORGET TO ATTACH THE FUNCTION TO THE APPROPRIATE BUTTON
@@ -26,7 +55,8 @@ const TodoPage = () => {
     // @todo IMPLEMENT HERE : SAVE THE TASK & REFRESH ALL THE TASKS, DON'T FORGET TO ATTACH THE FUNCTION TO THE APPROPRIATE BUTTON
     const method = task.id ? 'patch' : 'post';
     const url = task.id ? `/tasks/${task.id}` : '/tasks';
-    const body = { name: task.name };
+    const body = { name: task.name, priority: task.priority };
+
 
     await api[method](url, body);
     await handleFetchTasks();
@@ -34,6 +64,12 @@ const TodoPage = () => {
   const handleEditChange = (id: number, value: string) => {
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, name: value } : t))
+    );
+  };
+
+  const handlePriorityChange = (id: number, value: string) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, priority: value as Task['priority'] } : t))
     );
   };
 
@@ -48,10 +84,38 @@ const TodoPage = () => {
       <Box display="flex" justifyContent="center" mt={5}>
         <Typography variant="h2">HDM Todo List</Typography>
       </Box>
+      <Box display="flex" justifyContent="center" alignItems="center" mt={2}>
+        <FormControl component="fieldset">
+          <RadioGroup
+            row
+            value={sortDescending ? 'desc' : 'asc'}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSortDescending(value === 'desc');
+              const priorityOrder: Record<Task['priority'], number> = {
+                HIGH: 3,
+                MEDIUM: 2,
+                LOW: 1,
+              };
+              const sorted = [...tasks].sort((a, b) =>
+                value === 'desc'
+                  ? priorityOrder[b.priority] - priorityOrder[a.priority]
+                  : priorityOrder[a.priority] - priorityOrder[b.priority]
+              );
+              setTasks(sorted);
+            }}
+          >
+            <FormControlLabel value="desc" control={<Radio />} label="HIGH FIRST" />
+            <FormControlLabel value="asc" control={<Radio />} label="LOW FIRST" />
+          </RadioGroup>
+        </FormControl>
+      </Box>
 
       <Box justifyContent="center" mt={5} flexDirection="column">
         {tasks.map((task) => {
-          const hasChanged = task.name !== task.originalName;
+          const hasChanged =
+            task.name !== task.originalName ||
+            task.priority !== task.originalPriority;
 
           return (
             <Box
@@ -67,9 +131,32 @@ const TodoPage = () => {
                 size="small"
                 value={task.name}
                 fullWidth
-                sx={{ maxWidth: 350 }}
+                sx={{
+                  maxWidth: 350,
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor:
+                        task.priority === 'LOW'
+                          ? 'green'
+                          : task.priority === 'MEDIUM'
+                            ? 'orange'
+                            : 'red',
+                            borderWidth: 3,
+                    },
+                  },
+                }}
                 onChange={(e) => handleEditChange(task.id, e.target.value)}
               />
+
+              <Select
+                size="small"
+                value={task.priority}
+                onChange={(e) => handlePriorityChange(task.id, e.target.value)}
+              >
+                <MenuItem value="LOW">Low</MenuItem>
+                <MenuItem value="MEDIUM">Medium</MenuItem>
+                <MenuItem value="HIGH">High</MenuItem>
+              </Select>
               <Box>
                 <IconButton
                   color="success"
@@ -103,12 +190,26 @@ const TodoPage = () => {
             placeholder="Nouvelle tâche"
             sx={{ maxWidth: 350, width: '100%' }}
           />
+
+          <Select
+            size="small"
+            value={newTaskPriority}
+            onChange={(e) => setNewTaskPriority(e.target.value as Task['priority'])}
+          >
+            <MenuItem value="LOW">Low</MenuItem>
+            <MenuItem value="MEDIUM">Medium</MenuItem>
+            <MenuItem value="HIGH">High</MenuItem>
+          </Select>
           <Button
             variant="outlined"
             disabled={!newTaskName.trim()}
             onClick={async () => {
-              await api.post('/tasks', { name: newTaskName });
+              await api.post('/tasks', {
+                name: newTaskName,
+                priority: newTaskPriority,
+              });
               setNewTaskName('');
+              setNewTaskPriority('MEDIUM');
               await handleFetchTasks();
             }}
           >
