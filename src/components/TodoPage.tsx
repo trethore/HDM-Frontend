@@ -105,8 +105,8 @@ const TodoPage = () => {
               setTasks(sorted);
             }}
           >
-            <FormControlLabel value="desc" control={<Radio />} label="HIGH FIRST" />
-            <FormControlLabel value="asc" control={<Radio />} label="LOW FIRST" />
+            <FormControlLabel value="desc" control={<Radio />} label="Haut en premier" />
+            <FormControlLabel value="asc" control={<Radio />} label="Bas en premier" />
           </RadioGroup>
         </FormControl>
       </Box>
@@ -153,9 +153,9 @@ const TodoPage = () => {
                 value={task.priority}
                 onChange={(e) => handlePriorityChange(task.id, e.target.value)}
               >
-                <MenuItem value="LOW">Low</MenuItem>
-                <MenuItem value="MEDIUM">Medium</MenuItem>
-                <MenuItem value="HIGH">High</MenuItem>
+                <MenuItem value="LOW">Bas</MenuItem>
+                <MenuItem value="MEDIUM">Moyen</MenuItem>
+                <MenuItem value="HIGH">Haut</MenuItem>
               </Select>
               <Box>
                 <IconButton
@@ -196,9 +196,9 @@ const TodoPage = () => {
             value={newTaskPriority}
             onChange={(e) => setNewTaskPriority(e.target.value as Task['priority'])}
           >
-            <MenuItem value="LOW">Low</MenuItem>
-            <MenuItem value="MEDIUM">Medium</MenuItem>
-            <MenuItem value="HIGH">High</MenuItem>
+              <MenuItem value="LOW">Bas</MenuItem>
+              <MenuItem value="MEDIUM">Moyen</MenuItem>
+              <MenuItem value="HIGH">Haut</MenuItem>
           </Select>
           <Button
             variant="outlined"
