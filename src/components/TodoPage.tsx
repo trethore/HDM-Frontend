@@ -68,9 +68,23 @@ const TodoPage = () => {
   };
 
   const handlePriorityChange = (id: number, value: string) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, priority: value as Task['priority'] } : t))
+    const updatedTasks = tasks.map((t) =>
+      t.id === id ? { ...t, priority: value as Task['priority'] } : t
     );
+  
+    const priorityOrder: Record<Task['priority'], number> = {
+      HIGH: 3,
+      MEDIUM: 2,
+      LOW: 1,
+    };
+  
+    const sorted = [...updatedTasks].sort((a, b) =>
+      sortDescending
+        ? priorityOrder[b.priority] - priorityOrder[a.priority]
+        : priorityOrder[a.priority] - priorityOrder[b.priority]
+    );
+  
+    setTasks(sorted);
   };
 
   useEffect(() => {
